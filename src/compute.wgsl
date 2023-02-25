@@ -10,7 +10,6 @@ struct SimParams {
     type_one: vec3<f32>,
     type_two: vec3<f32>,
     type_three: vec3<f32>,
-    // _padding: vec3<f32>,
 }
 
 struct Particle {
@@ -24,8 +23,6 @@ struct Particle {
     color_y: f32,
     color_z: f32,
     type_: f32,
-    // _padding1: f32,
-    // _padding2: f32,
 }
 
 @binding(0) @group(0) var<uniform> params : SimParams;

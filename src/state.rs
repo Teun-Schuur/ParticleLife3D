@@ -1,12 +1,9 @@
-use std::{time}; //, future};
+use std::{time};
 
-// use cgmath::{Zero, InnerSpace, MetricSpace};
-// use cgmath::num_traits::clamp;
 use wgpu::BufferAsyncError;
 use wgpu::util::{DeviceExt, DownloadBuffer};
 use winit::window::Window;
 use winit::event::{WindowEvent};
-// use rand::Rng;
 
 use crate::params::Params;
 use crate::particle::Particle;
@@ -386,7 +383,6 @@ impl State {
         // wait till the end of the frame to reset the timer
         while self.time.elapsed().as_secs_f32() < 1.0 / FPS {
         }
-        // std::thread::sleep(std::time::Duration::from_secs_f32(time_left));
 
         if self.frame_count % 60 == 0 {
             println!("FPS: {}", 1.0 / self.time.elapsed().as_secs_f32());
@@ -453,17 +449,18 @@ impl State {
 }
  
 
-// fn print_data(r: Result<DownloadBuffer, BufferAsyncError>) {
-//     match r {
-//         Ok(buffer) => {
-//             let data = bytemuck::cast_slice::<u8, Particle>(&buffer[..]);
-//             for i in 0..data.len() {
-//                 println!("particle {}: {:?}", i, data[i]);
-//             }
-//         }
-//         Err(e) => {
-//             println!("error: {:?}", e);
-//         }
-//     }
+/// callback function for reading the particle buffer
+fn print_data(r: Result<DownloadBuffer, BufferAsyncError>) {
+    match r {
+        Ok(buffer) => {
+            let data = bytemuck::cast_slice::<u8, Particle>(&buffer[..]);
+            for i in 0..data.len() {
+                println!("particle {}: {:?}", i, data[i]);
+            }
+        }
+        Err(e) => {
+            println!("error: {:?}", e);
+        }
+    }
     
-// }
+}

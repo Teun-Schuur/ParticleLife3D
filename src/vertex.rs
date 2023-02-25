@@ -5,7 +5,6 @@
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     position: [f32; 3],
-    // color: [f32; 3],
 }
 unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
@@ -26,7 +25,6 @@ impl Vertex{
 
 
 pub struct Circle {
-    num_points: u16,
     vertices: Vec<Vertex>,
     indices: Vec<u16>,
     pub num_indices: u32,
@@ -37,7 +35,6 @@ impl Circle {
         let (vertices, indices) = Circle::create(&num_points);
         let num_indices = indices.len() as u32;
         Self {
-            num_points,
             vertices,
             indices,
             num_indices,
@@ -77,13 +74,3 @@ impl Circle {
         self.indices.clone()
     }
 }
-
-// pub const VERTICES: &[Vertex] = &[
-//     Vertex { position: [0.0, 0.5, 0.0], color: [1.0, 0.0, 0.0] },
-//     Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0] },
-//     Vertex { position: [0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0] },
-// ];
-
-// pub const INDICES: &[u16] = &[
-//     0, 1, 2,
-// ];

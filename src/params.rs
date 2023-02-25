@@ -10,13 +10,11 @@ pub struct Params {
     pub attraction_one: [f32; 3],
     pub attraction_two: [f32; 3],
     pub attraction_three: [f32; 3],
-    // pub _padding: [f32; 3],
 }
 unsafe impl bytemuck::Pod for Params {}
 unsafe impl bytemuck::Zeroable for Params {}
 
 impl Params {
-    // const ATTRIBS: [wgpu::VertexAttribute; 4] = wgpu::vertex_attr_array![0 => Float32, 1 => Float32, 2 => Float32, 3 => Float32];
     pub fn new() -> Self {
         Self {
             dt: 0.01,
@@ -26,7 +24,6 @@ impl Params {
             attraction_one: [0.0, 0.0, 0.0],
             attraction_two: [0.0, 0.0, 0.0],
             attraction_three: [0.0, 0.0, 0.0],
-            // _padding: [0.0; 3],
         }
     }
 
@@ -46,10 +43,6 @@ impl Params {
     }
 
     pub fn raw(&self) -> [f32; 13] {
-        // println!("got here");
-        // let cast: [f32; 13] = bytemuck::cast(*self);
-        // println!("data: {:?}", cast);
-        // return cast;
         bytemuck::cast(*self)
     }
 }

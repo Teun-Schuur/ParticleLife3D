@@ -1,5 +1,3 @@
-// use cgmath::num_traits::clamp;
-// use rand::Rng;
 
 
 #[repr(C)]
@@ -10,21 +8,18 @@ pub struct Particle {
     pub last_acceleration: [f32; 2],
     pub color: [f32; 3],
     pub type_: f32,
-    // pub _padding: [f32; 2],
 }
 unsafe impl bytemuck::Pod for Particle {}
 unsafe impl bytemuck::Zeroable for Particle {}
 
 impl Particle {
     const MAX_TYPES: u32 = 3;
-    const MAX_VELOCITY: f32 = 0.01;
     const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x2, 4 => Float32x2, 5 => Float32x2, 6 => Float32x3, 7 => Float32];
 
     pub fn new(container: f32, type_: f32) -> Self {
         let position = [container * (rand::random::<f32>()-0.5) * 2.0, container * (rand::random::<f32>()-0.5) * 2.0];
         let hue = map(type_, 0.0, Self::MAX_TYPES as f32, 0.0, 360.0);
         let color = hsb_to_rgb(hue, 1.0, 1.0);
-        // let velocity = [Self::MAX_VELOCITY * (rand::random::<f32>()-0.5) * 2.0, Self::MAX_VELOCITY * (rand::random::<f32>()-0.5) * 2.0];
         let velocity = [0.0, 0.0];
         Self {
             position,
@@ -32,7 +27,6 @@ impl Particle {
             last_acceleration: [0.0, 0.0],
             color,
             type_ : type_,
-            // _padding: [0.0; 2],
         }
     }
 
@@ -83,7 +77,6 @@ impl Default for Particle {
             last_acceleration: [0.0, 0.0],
             color: [0.0, 0.0, 0.0],
             type_: 0.0,
-            // _padding: [0.0; 2],
         }
     }
 }

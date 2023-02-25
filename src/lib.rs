@@ -1,9 +1,8 @@
-#![allow(unused_imports, dead_code)]
+// #![allow(unused_imports, dead_code)]
 
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{Event, WindowEvent, KeyboardInput, ElementState, VirtualKeyCode}};
 use env_logger;
 
-mod utils;
 mod params;
 mod vertex;
 mod particle;
