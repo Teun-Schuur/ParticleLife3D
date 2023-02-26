@@ -1,8 +1,8 @@
 use ParticleLife3D::run;
 
 
-const WIDTH: i32 = 600;
-const HEIGHT: i32 = 600;
+const WIDTH: i32 = 1700;
+const HEIGHT: i32 = 1000;
 
 
 

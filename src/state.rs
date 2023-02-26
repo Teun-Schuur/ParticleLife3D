@@ -3,7 +3,7 @@ use std::{time};
 use wgpu::BufferAsyncError;
 use wgpu::util::{DeviceExt, DownloadBuffer};
 use winit::window::Window;
-use winit::event::{WindowEvent};
+use winit::event::{WindowEvent, VirtualKeyCode, ElementState, KeyboardInput};
 
 use crate::params::Params;
 use crate::particle::Particle;
@@ -13,8 +13,16 @@ use crate::camera::{Camera, CameraUniform, CameraController};
 // using version 0.15.0 of wgpu
 const CLEAR_COLOR: wgpu::Color = wgpu::Color { r: 0.04, g: 0.04, b: 0.04, a: 1.0 };
 const FPS: f32 = 60.0;
-const NUMBER_PARTICLES: u32 = 20;
-const BOX_SIZE: f32 = 10.0;
+const NUMBER_PARTICLES: u32 = 10000;
+const BOX_SIZE: f32 = 2.0;
+const ITERATIONS: u32 = 10;
+
+/*
+Da game plan:
+- Create a compute shader that creates a 
+- Create a compute shader that calculates the next position and velocity of each particle
+
+ */
 
 pub struct State {
     surface: wgpu::Surface,
@@ -34,10 +42,13 @@ pub struct State {
     camera_bind_group: wgpu::BindGroup,
     particle_bind_groups: Vec<wgpu::BindGroup>,
     particle_buffers: Vec<wgpu::Buffer>,
+    params: Params,
+    params_buffer: wgpu::Buffer,
     compute_pipeline: wgpu::ComputePipeline,
     work_group_count: u32,
     time: time::Instant,
     frame_count: u32,
+    paused: bool,
 }
 
 impl State {
@@ -49,8 +60,12 @@ impl State {
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
         // instance is a handle to our GPU
+
+        // bentchmarking
+        // Vulkan: 900
+        // DX12: 860
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
+            backends: wgpu::Backends::DX12,
             dx12_shader_compiler: Default::default(),
         });
 
@@ -63,7 +78,7 @@ impl State {
         // We use this to create our Device and Queue later.
         let adapter = instance.request_adapter(
             &wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(), // LowPower or HighPerformance
+                power_preference: wgpu::PowerPreference::HighPerformance, // LowPower or HighPerformance
                 compatible_surface: Some(&surface),  //  tells wgpu to find an adapter that can present to the supplied surface.
                 force_fallback_adapter: false,  //  tells wgpu to use the software adapter if no hardware adapters are available.
             })
@@ -127,7 +142,7 @@ impl State {
             }
         );
         
-        let circle = Circle::new(6);
+        let circle = Circle::new(40);
         
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
@@ -149,7 +164,7 @@ impl State {
         
         let camera_controller = CameraController::new(0.03, 0.03);
         
-        let camera = Camera::new();
+        let camera = Camera::new(1.0 / ((NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE));
 
         let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
@@ -260,7 +275,7 @@ impl State {
 
         println!("compute_pipeline: {:?}", compute_pipeline);
         
-        let params = Params::new();
+        let params = Params::new((NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE);
         let params_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Params Buffer"),
@@ -287,7 +302,7 @@ impl State {
                         usage: wgpu::BufferUsages::VERTEX 
                             |wgpu::BufferUsages::STORAGE 
                             | wgpu::BufferUsages::COPY_DST
-                            // | wgpu::BufferUsages::COPY_SRC,
+                            | wgpu::BufferUsages::COPY_SRC,
                         }
                 )
             )
@@ -338,10 +353,13 @@ impl State {
             camera_bind_group,
             particle_bind_groups,
             particle_buffers,
+            params,
+            params_buffer,
             compute_pipeline,
             work_group_count,
             time,
             frame_count: 0,
+            paused: false,
         }
     }
 
@@ -356,13 +374,58 @@ impl State {
         self.size = new_size;
         self.config.width = new_size.width;
         self.config.height = new_size.height;
+        self.camera.set_aspect_ratio(new_size.width as f32 / new_size.height as f32);
         self.surface.configure(&self.device, &self.config);
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         self.camera_controller.process_events(event);
         match event {
-            // get mouse position
+            WindowEvent::KeyboardInput {
+                input: KeyboardInput {
+                    state,
+                    virtual_keycode: Some(keycode),
+                    ..
+                },
+                ..
+            } => {
+                let is_pressed = *state == ElementState::Pressed;
+                if is_pressed {
+                    match keycode {
+                        VirtualKeyCode::R => {
+                            self.params.reset_repulsion();
+                            self.queue.write_buffer(&self.params_buffer, 0, bytemuck::cast_slice(&self.params.raw()));
+                            println!("params: {:?}", self.params);
+                            true
+                        }
+                        VirtualKeyCode::Equals => {
+                            self.params.dt *= 1.1;
+                            self.queue.write_buffer(&self.params_buffer, 0, bytemuck::cast_slice(&self.params.raw()));
+                            println!("updated dt: {:?}", self.params.dt);
+                            true
+                        }
+                        VirtualKeyCode::Minus => {
+                            self.params.dt /= 1.1;
+                            self.queue.write_buffer(&self.params_buffer, 0, bytemuck::cast_slice(&self.params.raw()));
+                            println!("updated dt: {:?}", self.params.dt);
+                            true
+                        }
+                        VirtualKeyCode::P => {
+                            self.paused = !self.paused;
+                            true
+                        }
+                        VirtualKeyCode::Space => {
+                            self.queue.write_buffer(&self.particle_buffers[0], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
+                            self.queue.write_buffer(&self.particle_buffers[1], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
+                            true
+                        }
+                        _ => false
+                    }
+                }
+                else {
+                    false
+                }
+            }
             _ => false,
         }
     }
@@ -374,8 +437,9 @@ impl State {
         
         // time left over from last frame
         let time_left = 1.0 / FPS - self.time.elapsed().as_secs_f32();
+        // wgpu::util::DownloadBuffer::read_buffer(&self.device, &self.queue, &self.particle_buffers[0].slice(..), print_data);
+        // wgpu::util::DownloadBuffer::read_buffer(&self.device, &self.queue, &self.particle_buffers[1].slice(..), print_data);
         if self.frame_count % 60 == 0 {
-            // wgpu::util::DownloadBuffer::read_buffer(&self.device, &self.queue, &self.particle_buffers[0].slice(..), print_data);
             let used_time_fraction = 1.0 - time_left / (1.0 / FPS);
             let used_time = used_time_fraction * 1.0 / FPS;
             println!("used time: {} / {} ms,  fraction: {}%", used_time*1000.0, 1.0 / FPS * 1000.0, used_time_fraction*100.0);
@@ -399,16 +463,20 @@ impl State {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") });
         
-        encoder.push_debug_group("compute gravity and update positions");
-        {
-            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Compute Pass"),
-            });
-            compute_pass.set_pipeline(&self.compute_pipeline);
-            compute_pass.set_bind_group(0, &self.particle_bind_groups[self.frame_count as usize % 2], &[]);
-            compute_pass.dispatch_workgroups(self.work_group_count, 1, 1);
+        if !self.paused{
+            encoder.push_debug_group("compute gravity and update positions");
+            {
+                for i in 0..ITERATIONS as usize{
+                    let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some(format!("Compute Pass {}", i).as_str()),
+                    });
+                    compute_pass.set_pipeline(&self.compute_pipeline);
+                    compute_pass.set_bind_group(0, &self.particle_bind_groups[(self.frame_count as usize + i )% 2], &[]);
+                    compute_pass.dispatch_workgroups(self.work_group_count, 1, 1);
+                }
+            }
+            encoder.pop_debug_group();
         }
-        encoder.pop_debug_group();
 
 
         encoder.push_debug_group("render particles");
@@ -439,7 +507,9 @@ impl State {
         }
         encoder.pop_debug_group();
 
-        self.frame_count += 1;
+        if !self.paused{
+            self.frame_count += 1;
+        }
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
         frame.present();

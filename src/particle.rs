@@ -13,7 +13,7 @@ unsafe impl bytemuck::Pod for Particle {}
 unsafe impl bytemuck::Zeroable for Particle {}
 
 impl Particle {
-    const MAX_TYPES: u32 = 3;
+    const MAX_TYPES: u32 = 4;
     const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x2, 4 => Float32x2, 5 => Float32x2, 6 => Float32x3, 7 => Float32];
 
     pub fn new(container: f32, type_: f32) -> Self {
@@ -30,7 +30,7 @@ impl Particle {
         }
     }
 
-    pub fn raw(&self) -> [f32; 10] {
+    pub fn raw(&self) -> [f32; std::mem::size_of::<Particle>()/4] {
         bytemuck::cast(*self)
     }
 

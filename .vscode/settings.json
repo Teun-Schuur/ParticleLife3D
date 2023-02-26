@@ -1,0 +1,5 @@
+{
+    "wgsl-analyzer.diagnostics.nagaParsingErrors": true,
+    "wgsl-analyzer.inlayHints.structLayoutHints": true,
+    "wgsl-analyzer.inlayHints.typeVerbosity": "inner"
+}

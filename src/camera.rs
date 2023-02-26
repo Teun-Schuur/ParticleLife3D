@@ -5,13 +5,15 @@ use winit::event::{WindowEvent, KeyboardInput, ElementState, VirtualKeyCode};
 pub struct Camera {
     pub position: [f32; 2],
     pub zoom: f32,
+    pub aspect_ratio: f32,
 }
 
 impl Camera {
-    pub fn new() -> Self {
+    pub fn new(zoom: f32) -> Self {
         Self {
             position: [0.0, 0.0],
-            zoom: 0.03,
+            zoom,
+            aspect_ratio: 1.0,
         }
     }
 
@@ -24,7 +26,11 @@ impl Camera {
             -self.position[1],
             0.0,
         ));
-        scale * translate
+        scale * translate * Matrix4::from_nonuniform_scale(1.0, self.aspect_ratio, 1.0)
+    }
+
+    pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
+        self.aspect_ratio = aspect_ratio;
     }
 }
 
