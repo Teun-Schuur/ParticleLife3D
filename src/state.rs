@@ -11,11 +11,18 @@ use crate::vertex::{Vertex, Circle};
 use crate::camera::{Camera, CameraUniform, CameraController};
 
 // using version 0.15.0 of wgpu
+const NUMBER_PARTICLES: u32 = 10000;
+const NEIGHBORHOOD_SIZE: f32 = 15.0;
+
 const CLEAR_COLOR: wgpu::Color = wgpu::Color { r: 0.04, g: 0.04, b: 0.04, a: 1.0 };
 const FPS: f32 = 60.0;
-const NUMBER_PARTICLES: u32 = 10000;
-const BOX_SIZE: f32 = 2.0;
 const ITERATIONS: u32 = 10;
+const BIN_DEPTH: u32 = 20;
+const BIN_SIZE: f32 = NEIGHBORHOOD_SIZE;
+const BIN_COUNT: u32 = 64; // for each dimension
+
+const BOX_SIZE: f32 = BIN_SIZE * BIN_COUNT as f32;
+
 
 /*
 Da game plan:
@@ -275,7 +282,8 @@ impl State {
 
         println!("compute_pipeline: {:?}", compute_pipeline);
         
-        let params = Params::new((NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE);
+        // let params = Params::new((NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE);
+        let params = Params::new(BOX_SIZE, NEIGHBORHOOD_SIZE);
         let params_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Params Buffer"),

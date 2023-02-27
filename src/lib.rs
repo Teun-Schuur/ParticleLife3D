@@ -3,6 +3,7 @@
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{Event, WindowEvent, KeyboardInput, ElementState, VirtualKeyCode}};
 use env_logger;
 
+mod buffers;
 mod params;
 mod vertex;
 mod particle;

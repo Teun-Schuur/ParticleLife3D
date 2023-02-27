@@ -52,16 +52,13 @@ fn attraction(dist: f32, f: f32) -> f32 {
     return max_force * f * (1.0 - abs(2.0 * (dist - params.global_repulsion_distance - (params.neghborhood_size * 0.5 - 0.5)) / (params.neghborhood_size - params.global_repulsion_distance)));
 }
 
-// fn attraction(dist: f32, f: f32, nhs: f32, nhsi: f32, denom: f32) -> f32 {
-//     var out: f32;
-//     if dist <= params.global_repulsion_distance {
-//         out = max_force * (params.global_repulsion_distance - dist) * nhsi;
-//     } else{
-//         let numer = dist - params.global_repulsion_distance - nhs;
-//         out = max_force * f * (1.0 - numer * denom);
-//     }
-//     return out;
+// fn calculate_cell(x: f32, y: f32) -> u32 {
+//     // hash the particle position to a cell
+//     let cell_x = floor(x * GRID_SIZE);
+//     let cell_y = floor(y * GRID_SIZE);
+//     return cell_x + cell_y * GRID_SIZE;
 // }
+
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
