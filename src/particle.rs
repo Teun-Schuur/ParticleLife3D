@@ -1,3 +1,5 @@
+use rand::Rng;
+
 
 
 #[repr(C)]
@@ -17,10 +19,11 @@ impl Particle {
     const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x2, 4 => Float32x2, 5 => Float32x2, 6 => Float32x3, 7 => Float32];
 
     pub fn new(container: f32, type_: f32) -> Self {
+        let mut rng = rand::thread_rng();
         let position = [container * (rand::random::<f32>()-0.5) * 2.0, container * (rand::random::<f32>()-0.5) * 2.0];
         let hue = map(type_, 0.0, Self::MAX_TYPES as f32, 0.0, 360.0);
         let color = hsb_to_rgb(hue, 1.0, 1.0);
-        let velocity = [0.0, 0.0];
+        let velocity = [rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)];
         Self {
             position,
             velocity,

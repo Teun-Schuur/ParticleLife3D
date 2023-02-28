@@ -23,11 +23,11 @@ impl Params {
     pub fn new(box_size: f32, neghborhood_size: f32) -> Self {
         let mut rng = rand::thread_rng();
         Self {
-            dt: 0.04,
+            dt: 0.001,
             neghborhood_size,
             max_force: 300.0,
-            friction: 0.05,
-            global_repulsion_distance: 6.0,
+            friction: 0.0,
+            global_repulsion_distance: 2.0,
             // attraction_one: [-1.0, -0.1, 0.1],
             // attraction_two: [0.1, -1.0, -0.1],
             // attraction_three: [-0.1, -0.1, -1.0],

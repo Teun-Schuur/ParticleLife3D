@@ -3,6 +3,9 @@
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{Event, WindowEvent, KeyboardInput, ElementState, VirtualKeyCode}};
 use env_logger;
 
+mod consts;
+mod render_set;
+mod compute_set;
 mod buffers;
 mod params;
 mod vertex;
@@ -23,8 +26,8 @@ pub async fn run(width: i32, height: i32) {
         .build(&event_loop)
         .unwrap();
 
-    let mut state = State::new(window).await;
-
+    let mut state: State = State::new(window).await;
+    
     event_loop.run(move |event, _, control_flow| {
         match event {
             Event::WindowEvent {
