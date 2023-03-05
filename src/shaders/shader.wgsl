@@ -1,7 +1,7 @@
 
-// vertex shader
-
 // Vertex shader
+const SIZE: f32 = 1.1403000; // in nm
+
 struct CameraUniform {
     view_proj: mat4x4<f32>,
 };
@@ -29,8 +29,8 @@ fn vs_main(model: VertexInput, particle: Particle) -> VertexOutput {
     out.color = particle.color;
     var model_pos = vec3<f32>(particle.pos, 0.0);
     var model_matrix = mat4x4<f32>(
-        vec4<f32>(1.0, 0.0, 0.0, 0.0),
-        vec4<f32>(0.0, 1.0, 0.0, 0.0),
+        vec4<f32>(SIZE, 0.0, 0.0, 0.0),
+        vec4<f32>(0.0, SIZE, 0.0, 0.0),
         vec4<f32>(0.0, 0.0, 1.0, 0.0),
         vec4<f32>(model_pos, 1.0),
     );

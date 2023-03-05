@@ -1,6 +1,9 @@
 use rand::Rng;
 
+use crate::system::consts::*;
+use crate::utils::utils::maxwell_boltzmann_sampler;
 
+use super::params::Params;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -18,12 +21,11 @@ impl Particle {
     const MAX_TYPES: u32 = 4;
     const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x2, 4 => Float32x2, 5 => Float32x2, 6 => Float32x3, 7 => Float32];
 
-    pub fn new(container: f32, type_: f32) -> Self {
-        let mut rng = rand::thread_rng();
-        let position = [container * (rand::random::<f32>()-0.5) * 2.0, container * (rand::random::<f32>()-0.5) * 2.0];
+    pub fn new(type_: f32, position: [f32; 2], velocity: [f32; 2]) -> Self {
+        // let mut rng = rand::thread_rng();
+        // let position = [container * (rand::random::<f32>()-0.5) * 2.0, container * (rand::random::<f32>()-0.5) * 2.0];
         let hue = map(type_, 0.0, Self::MAX_TYPES as f32, 0.0, 360.0);
         let color = hsb_to_rgb(hue, 1.0, 1.0);
-        let velocity = [rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)];
         Self {
             position,
             velocity,
@@ -33,8 +35,16 @@ impl Particle {
         }
     }
 
-    pub fn raw(&self) -> [f32; std::mem::size_of::<Particle>()/4] {
-        bytemuck::cast(*self)
+    // pub fn raw(&self) -> [f32; std::mem::size_of::<Particle>()/4] {
+    //     bytemuck::cast(*self)
+    // }
+
+    pub fn serialize(&self) -> &[u8] {
+        bytemuck::bytes_of(self)
+    }
+
+    pub fn serialize_all(particles: &[Particle]) -> &[u8] {
+        bytemuck::cast_slice(particles)
     }
 
     pub fn size() -> wgpu::BufferAddress {
@@ -62,11 +72,28 @@ impl Particle {
         }
     }
 
-    pub fn create_particles(num_particles: u64, container: f32) -> Vec<Particle> {
+    pub fn create_particles(num_particles: u64, params: &Params) -> Vec<Particle> {
+        // space particles evenly in a grid
+        let mut rng = rand::thread_rng();
         let mut particles = Vec::with_capacity(num_particles as usize);
-        for i in 0..num_particles {
-            let _type = i as u32 % Self::MAX_TYPES;
-            particles.push(Particle::new(container, _type as f32));
+        
+        let side = (num_particles as f32).sqrt().ceil() as u32;
+        let spacing = params.box_size / side as f32;
+        
+        for i in 0..side {
+            for j in 0..side {
+                if i*side + j >= num_particles as u32 {
+                    break;
+                }
+                let x = (i as f32) * spacing * 2.0 - params.box_size;
+                let y = (j as f32) * spacing * 2.0- params.box_size;
+                let _type = (i+j*side) as u32 % Self::MAX_TYPES;
+                particles.push(Particle::new(
+                    _type as f32, 
+                    [x, y],
+                    maxwell_boltzmann_sampler(INIT_TEMPERATURE, params.helium.mass)
+                ));
+            }
         }
         particles
     }

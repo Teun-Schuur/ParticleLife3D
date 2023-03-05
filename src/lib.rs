@@ -3,15 +3,21 @@
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{Event, WindowEvent, KeyboardInput, ElementState, VirtualKeyCode}};
 use env_logger;
 
-mod consts;
-mod render_set;
-mod compute_set;
-mod buffers;
-mod params;
-mod vertex;
-mod particle;
-mod camera;
-mod state;
+
+// mod wgsl_types;
+// mod render_set;
+// mod compute_set;
+// mod buffers;
+// mod params;
+// mod vertex;
+// mod particle;
+// mod camera;
+
+#[macro_use]
+pub mod render;
+pub mod system;
+pub mod state;
+pub mod utils;
 
 use crate::state::State;
 

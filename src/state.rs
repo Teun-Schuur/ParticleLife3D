@@ -5,14 +5,23 @@ use wgpu::util::{DeviceExt, DownloadBuffer};
 use winit::window::Window;
 use winit::event::{WindowEvent, VirtualKeyCode, ElementState, KeyboardInput};
 
-use crate::buffers::Buffer;
-use crate::compute_set::ComputeSet;
-use crate::params::Params;
-use crate::particle::Particle;
-use crate::render_set::RenderSet;
-use crate::vertex::{Vertex, Circle};
-use crate::camera::{Camera, CameraUniform, CameraController};
-use crate::consts::*;
+
+use crate::system::{
+    params::Params,
+    particle::Particle,
+    compute_set::ComputeSet,
+    consts::*,
+};
+
+use crate::render::{
+    render_set::RenderSet,
+    vertex::{Vertex, Circle},
+    camera::{Camera, CameraUniform, CameraController},
+};
+
+use crate::utils::{
+    buffers::Buffer,
+};
 
 // using version 0.15.0 of wgpu
 
@@ -157,21 +166,15 @@ impl State {
                 let is_pressed = *state == ElementState::Pressed;
                 if is_pressed {
                     match keycode {
-                        VirtualKeyCode::R => {
-                            self.compute.params.reset_repulsion();
-                            self.queue.write_buffer(&self.compute.params_buffer, 0, bytemuck::cast_slice(&self.compute.params.raw()));
-                            println!("params: {:?}", self.compute.params);
-                            true
-                        }
                         VirtualKeyCode::Equals => {
                             self.compute.params.dt *= 1.1;
-                            self.queue.write_buffer(&self.compute.params_buffer, 0, bytemuck::cast_slice(&self.compute.params.raw()));
+                            self.queue.write_buffer(&self.compute.params_buffer, 0, self.compute.params.serialize());
                             println!("updated dt: {:?}", self.compute.params.dt);
                             true
                         }
                         VirtualKeyCode::Minus => {
                             self.compute.params.dt /= 1.1;
-                            self.queue.write_buffer(&self.compute.params_buffer, 0, bytemuck::cast_slice(&self.compute.params.raw()));
+                            self.queue.write_buffer(&self.compute.params_buffer, 0, self.compute.params.serialize());
                             println!("updated dt: {:?}", self.compute.params.dt);
                             true
                         }
@@ -179,11 +182,11 @@ impl State {
                             self.paused = !self.paused;
                             true
                         }
-                        VirtualKeyCode::Space => {
-                            self.queue.write_buffer(&self.compute.particle_buffers[0], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
-                            self.queue.write_buffer(&self.compute.particle_buffers[1], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
-                            true
-                        }
+                        // VirtualKeyCode::Space => {
+                        //     self.queue.write_buffer(&self.compute.particle_buffers[0], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
+                        //     self.queue.write_buffer(&self.compute.particle_buffers[1], 0, bytemuck::cast_slice(&Particle::create_particles(NUMBER_PARTICLES.into(), (NUMBER_PARTICLES as f32).sqrt() * BOX_SIZE)));
+                        //     true
+                        // }
                         _ => false
                     }
                 }
@@ -215,17 +218,17 @@ impl State {
         // time left over from last frame
         let time_left = 1.0 / FPS - self.time.elapsed().as_secs_f32();
         if self.frame_count % 60 == 0 {
-            self.compute.debug(&self.device, &self.queue);
             let used_time_fraction = 1.0 - time_left / (1.0 / FPS);
             let used_time = used_time_fraction * 1.0 / FPS;
-            println!("used time: {} / {} ms,  fraction: {}%", used_time*1000.0, 1.0 / FPS * 1000.0, used_time_fraction*100.0);
+            println!("========================== 60 frames elapsed ============================");
+            print!("used time: {} / {} ms,  fraction: {}%, ", used_time*1000.0, 1.0 / FPS * 1000.0, used_time_fraction*100.0);
         }
         // wait till the end of the frame to reset the timer
         while self.time.elapsed().as_secs_f32() < 1.0 / FPS {
         }
-
         if self.frame_count % 60 == 0 {
             println!("FPS: {}", 1.0 / self.time.elapsed().as_secs_f32());
+            self.compute.debug(&self.device, &self.queue);
         }
         self.time = time::Instant::now();
     }

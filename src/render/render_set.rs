@@ -1,8 +1,19 @@
 use wgpu::{SurfaceTexture, CommandEncoder};
 use winit::{window::Window, event::WindowEvent};
 
-use crate::{buffers::Buffer, camera::{Camera, CameraController, CameraUniform}, vertex::{Circle, Vertex}, particle::Particle};
-use crate::consts::*;
+use crate::render::{
+    camera::{Camera, CameraController, CameraUniform}, 
+    vertex::{Circle, Vertex},
+};
+
+use crate::system::{
+    consts::*,
+    particle::Particle,
+};
+
+use crate::utils::{
+    buffers::Buffer,
+};
 
 pub struct RenderSet {
     size: winit::dpi::PhysicalSize<u32>,
@@ -75,7 +86,7 @@ impl RenderSet{
         });
         
                 
-        let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
+        let shader = device.create_shader_module(wgpu::include_wgsl!("..\\shaders\\shader.wgsl"));
         
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),

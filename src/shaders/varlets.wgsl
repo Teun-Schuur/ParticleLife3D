@@ -8,14 +8,26 @@ const BIN_COUNT = 3000u;
 // const BOX_SIZE = BIN_SIZE * BIN_COUNT;
 const BOX_SIZE = 3000f;
 
-struct Params {                        // align(4) size(64)
-    dt: f32,                            // align(4) size(4)
-    neghborhood_size: f32,              // align(4) size(4)
-    max_force: f32,                  // align(4) size(4)
-    friction: f32,                      // align(4) size(4)
-    global_repulsion_distance: f32,     // align(4) size(4)
-    box_size: f32,                      // align(4) size(4)
-    attraction: mat4x4<f32>,        // align(4) size(48)
+struct Atom{
+    size: f32, // in nm
+    mass: f32, // in Dalton (1.66053906660e-27 kg)
+    charge: i32, // in elementary charge (1.602176634e-19 C)
+    sigma: f32, // in nm
+    epsilon: f32, // eV (1.602176634e-19 J)
+}
+
+struct Params {
+    dt: f32,  // in ps
+    neghborhood_size: f32, // in nm
+    max_force: f32, // in nm * amu / ps^2
+    friction: f32,  // in amu / ps
+    global_repulsion_distance: f32, // in nm
+    box_size: f32, // in nm
+    bin_size: f32, // in nm
+    bin_count: u32,
+    bin_capacity: u32,
+    attraction: mat4x4,
+    helium: Atom,
 }
 
 struct Particle {
@@ -45,14 +57,14 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     
     var vPos = vec2<f32>(particles[index].x, particles[index].y);
     var vVel = vec2<f32>(particles[index].vel_x, particles[index].vel_y);
-    // var vAcc = vec2<f32>(particles[index].acc_x, particles[index].acc_y);
-    var vAcc = vec2<f32>(0.0, -2.0);
+    var vAcc = vec2<f32>(particles[index].acc_x, particles[index].acc_y);
+    // var vAcc = vec2<f32>(0.0, 0.0);
 
 
-    let dt: f32 = params.dt;
-    vVel = vVel + vAcc * dt;
-    vVel = vVel * (1.0 - params.friction); 
-    vPos = vPos + vVel * dt + vAcc * dt * dt * 0.5;
+    // let dt: f32 = params.dt;
+    // vPos = vPos + vVel * dt + vAcc * dt * dt * 0.5;
+    // vVel = vVel + vAcc * dt;
+    // vVel = vVel * (1.0 - params.friction); 
 
 
     particles[index].x = vPos.x;
