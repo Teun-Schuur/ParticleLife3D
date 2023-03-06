@@ -234,9 +234,6 @@ impl State {
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-
-        
-        // let frame = self.render.unwrap().render(self.encoder.take().unwrap(), &self.compute.unwrap().particle_buffers[(self.frame_count as usize + ITERATIONS as usize) % 2]);
         let frame = self.render.render(
             self.encoder.as_mut().unwrap(),
             &self.compute.particle_buffers[self.frame_count as usize % 2],

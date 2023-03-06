@@ -150,10 +150,12 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
         for (var y = -1; y <= 1; y += 1) {
             let new_x = bin_x + x;
             let new_y = bin_y + y;
-            if (new_x < 0 || new_x >= i32(params.bin_count) || new_y < 0 || new_y >= i32(params.bin_count)) {
-                continue;
-            }
-            let bin_index = u32(new_x) + u32(new_y) * params.bin_count;
+
+            // if (new_x < 0 || new_x >= i32(params.bin_count) || new_y < 0 || new_y >= i32(params.bin_count)) {
+                // continue;
+            // }
+            let bin_index = wrap_bin(new_x, new_y);
+            // let bin_index = u32(new_x) + u32(new_y) * params.bin_count;
             let bin_size = bin_load[bin_index];
             for (var j = 0u; j < bin_size; j += 1u) {
                 let p_index = u32(depth[bin_index*params.bin_capacity + j]);
@@ -164,7 +166,24 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
                 pos = vec2<f32>(particlesA[p_index].x, particlesA[p_index].y);
                 vel = vec2<f32>(particlesA[p_index].vel_x, particlesA[p_index].vel_y);
                 d = vPos - pos;
+                // wrap around
+                if d.x > params.box_size {
+                    d.x -= params.box_size*2.0;
+                }
+                if d.x < -params.box_size {
+                    d.x += params.box_size*2.0;
+                }
+                if d.y > params.box_size {
+                    d.y -= params.box_size*2.0;
+                }
+                if d.y < -params.box_size {
+                    d.y += params.box_size*2.0;
+                }
+
                 dist = length(d);
+                if dist > params.neghborhood_size {
+                    continue;
+                }
                 normal = d / dist;
                 energy = energy + lennard_jones(dist, params.helium.sigma, params.helium.epsilon) * 0.5;
                 acc = acc + calc_forces(dist, normal) / params.helium.mass;
@@ -174,40 +193,41 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     }
 
 
-    // if vPos.x < 0.0 {
-    //     vPos.x += params.box_size*2.0;
-    // }
-    // if vPos.x > params.box_size {
-    //     vPos.x -= params.box_size*2.0;
-    // }
-    // if vPos.y < 0.0 {
-    //     // vPos.y =-params.box_size;
-    //     vPos.y += params.box_size*2.0;
-    // }
-    // if vPos.y > params.box_size {
-    //     vPos.y -= params.box_size*2.0;
-    // }
     // acc = acc + vec2<f32>(0.0, -0.02);
     vPos = vPos + vVel * params.dt + vAcc * params.dt * params.dt * 0.5;
     vVel = vVel + (acc + vAcc) * params.dt * 0.5;
     energy = energy + 0.5 * dot(vVel, vVel) * params.helium.mass;
-
-    if vPos.x < -params.box_size {
-        vPos.x = -params.box_size;
-        vVel.x = vVel.x * -1.0;
+    
+    if vPos.x < 0.0 {
+        vPos.x += params.box_size*2.0;
     }
     if vPos.x > params.box_size {
-        vPos.x = params.box_size;
-        vVel.x = vVel.x * -1.0;
+        vPos.x -= params.box_size*2.0;
     }
-    if vPos.y < -params.box_size {
-        vPos.y = -params.box_size;
-        vVel.y = vVel.y * -1.0;
+    if vPos.y < 0.0 {
+        // vPos.y =-params.box_size;
+        vPos.y += params.box_size*2.0;
     }
     if vPos.y > params.box_size {
-        vPos.y = params.box_size;
-        vVel.y = vVel.y * -1.0;
+        vPos.y -= params.box_size*2.0;
     }
+
+    // if vPos.x < -params.box_size {
+    //     vPos.x = -params.box_size;
+    //     vVel.x = vVel.x * -1.0;
+    // }
+    // if vPos.x > params.box_size {
+    //     vPos.x = params.box_size;
+    //     vVel.x = vVel.x * -1.0;
+    // }
+    // if vPos.y < -params.box_size {
+    //     vPos.y = -params.box_size;
+    //     vVel.y = vVel.y * -1.0;
+    // }
+    // if vPos.y > params.box_size {
+    //     vPos.y = params.box_size;
+    //     vVel.y = vVel.y * -1.0;
+    // }
 
     
     energies[index] = energy;

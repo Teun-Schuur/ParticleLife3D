@@ -29,6 +29,16 @@ macro_rules! bind_group_entry {
     };
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Timings {
+    pub empty_bins: f32,
+    pub binning: f32,
+    pub energy: f32,
+    pub collision: f32,
+    pub total: f32,
+}
+
+
 pub struct ComputeSet {
     pub particle_buffers: Vec<wgpu::Buffer>,
     particle_bind_groups: Vec<wgpu::BindGroup>,
@@ -242,14 +252,14 @@ impl ComputeSet {
 
         let mut energy_buffers = Vec::<wgpu::Buffer>::new();
         let mut energy_bind_groups = Vec::<wgpu::BindGroup>::new();
-        const num_particles: usize = (1 << (u32::BITS - NUMBER_PARTICLES.leading_zeros())) as usize;
-        println!("num particles: {}, NUMBER_PARTICLES: {}", num_particles, NUMBER_PARTICLES);
+        const NUM_PARTICLES_: usize = (1 << (u32::BITS - NUMBER_PARTICLES.leading_zeros())) as usize;
+        println!("num particles: {}, NUMBER_PARTICLES: {}", NUM_PARTICLES_, NUMBER_PARTICLES);
         for i in 0..2 {
             energy_buffers.push(
                 device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some(&format!("Energy Buffer {}", i)),
-                        contents: bytemuck::cast_slice(&[0f32; num_particles]),
+                        contents: bytemuck::cast_slice(&[0f32; NUM_PARTICLES_]),
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::COPY_SRC,
                     }
                 )
@@ -359,10 +369,10 @@ impl ComputeSet {
             let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some(format!("Compute Pass").as_str()),
             });
-            for i in 0..ITERATIONS as usize{
+            for i in 0..ITERATIONS as usize {
                 self.total_iterations += 1;
 
-                // // empty bins
+                // empty bins
                 compute_pass.set_pipeline(&self.empty_bins_pipeline);
                 compute_pass.set_bind_group(0, &self.empty_bins_bind_group, &[]);
                 compute_pass.dispatch_workgroups(((BIN_COUNT * BIN_COUNT) as f32 / 256.0).ceil() as u32, 1, 1);
@@ -374,7 +384,7 @@ impl ComputeSet {
                 
                 // collisions
                 compute_pass.set_pipeline(&self.compute_pipeline);
-                compute_pass.set_bind_group(0, &self.particle_bind_groups[(frame + i ) % 2], &[]);
+                compute_pass.set_bind_group(0, &self.particle_bind_groups[(frame + i) % 2], &[]);
                 compute_pass.dispatch_workgroups(self.work_group_count, 1, 1);
             }
 
@@ -431,7 +441,6 @@ impl ComputeSet {
     fn print_energy_buffer(r: Result<DownloadBuffer, BufferAsyncError>) {
         match r {
             Ok(buffer) => {
-                let mut energy = 0.0;
                 let mut tot_energy = 0.0;
                 let energies = bytemuck::cast_slice::<u8, f32>(&buffer[..]);
                 for i in 0..NUMBER_PARTICLES as usize {
@@ -479,6 +488,7 @@ impl ComputeSet {
                         }
                     }
                 }
+                println!("max particles per bin: {}", maxim);
                 if maxim > BIN_DEPTH {
                     println!("max particles per bin exceeded: {}", maxim);
                 }

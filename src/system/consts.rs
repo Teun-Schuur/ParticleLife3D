@@ -11,12 +11,12 @@ force: eV / nm or nm * amu / ps^2 or 1.660539040 pN
 pub const MAX_FORCE: f32 = 200e30;
 
 pub const NUMBER_PARTICLES: u32 = 1000;
-pub const NEIGHBORHOOD_SIZE: f32 = 10.0; // in nm
+pub const NEIGHBORHOOD_SIZE: f32 = 2.2807000 * 5.0; // in nm
 pub const INIT_TEMPERATURE: f32 = 300.0; // in Kelvin
-// pub const INIT_VELOCITY: f32 = 100e-3; // 1 nm per picosecond
+pub const INIT_VELOCITY: f32 = 100e-3; // 1 nm per picosecond
 
 pub const DT : f32 = 1e-3; // in picoseconds
-pub const ITERATIONS: u32 = 100;
+pub const ITERATIONS: u32 = 201;
 pub const BIN_DEPTH: u32 = 100;
 pub const BIN_SIZE: f32 = NEIGHBORHOOD_SIZE;
 

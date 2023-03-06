@@ -32,6 +32,6 @@ pub fn maxwell_boltzmann_sampler(temperature: f32, mass: f32) -> [f32; 2] {
     v_x = length * dir.cos();
     v_y = length * dir.sin();
     
-    println!("v_rms: {v_rms}, v_x: {v_x}, v_y: {v_y}, length: {length}");
+    // println!("v_rms: {v_rms}, v_x: {v_x}, v_y: {v_y}, length: {length}");
     return [v_x/1000.0, v_y/1000.0];
 }

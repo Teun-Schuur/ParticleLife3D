@@ -1,9 +1,6 @@
 use std::fmt::Debug;
 
-use rand::Rng;
-
 use crate::system::consts::*;
-use crate::utils::wgsl_types::*;
 
 // https://openkim.org/files/MO_959249795837_003/LennardJones612_UniversalShifted.params
 #[repr(C, align(4))]
@@ -58,7 +55,7 @@ impl Params {
                 mass: 6.0,
                 charge: 0,
                 sigma: 2.2807000,
-                epsilon: 1.0496900 * mU_over_eV,
+                epsilon: 1.0496900 * mU_over_eV * 400.0,
             }
         }
     }

@@ -1,4 +1,3 @@
-use rand::Rng;
 
 use crate::system::consts::*;
 use crate::utils::utils::maxwell_boltzmann_sampler;
@@ -74,19 +73,19 @@ impl Particle {
 
     pub fn create_particles(num_particles: u64, params: &Params) -> Vec<Particle> {
         // space particles evenly in a grid
-        let mut rng = rand::thread_rng();
         let mut particles = Vec::with_capacity(num_particles as usize);
         
         let side = (num_particles as f32).sqrt().ceil() as u32;
-        let spacing = params.box_size / side as f32;
-        
+        // let spacing = params.box_size / side as f32;
+        let spacing = NEIGHBORHOOD_SIZE / 5.0 * 0.55;
+        let ofset = BOX_SIZE / 2.0 - spacing * side as f32 / 2.0;
         for i in 0..side {
             for j in 0..side {
                 if i*side + j >= num_particles as u32 {
                     break;
                 }
-                let x = (i as f32) * spacing * 2.0 - params.box_size;
-                let y = (j as f32) * spacing * 2.0- params.box_size;
+                let x = (i as f32) * spacing * 2.0 - params.box_size + ofset;
+                let y = (j as f32) * spacing * 2.0- params.box_size + ofset;
                 let _type = (i+j*side) as u32 % Self::MAX_TYPES;
                 particles.push(Particle::new(
                     _type as f32, 
