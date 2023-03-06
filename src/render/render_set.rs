@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use wgpu::{SurfaceTexture, CommandEncoder};
 use winit::{window::Window, event::WindowEvent};
 
@@ -15,10 +17,13 @@ use crate::utils::{
     buffers::Buffer,
 };
 
+use super::{vertex::UVSphere, camera::Projection};
+
 pub struct RenderSet {
     size: winit::dpi::PhysicalSize<u32>,
     camera: Camera,
     camera_controller: CameraController,
+    camera_projection: Projection,
     camera_uniform: CameraUniform,
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: Buffer,
@@ -35,7 +40,7 @@ impl RenderSet{
 
         // buffers:
         
-        let circle = Circle::new(40);
+        let circle = UVSphere::new(16);
         let vertex_buffer = Buffer::new()
         .with_data(bytemuck::cast_slice(&circle.get_vertices()))
             .with_usage(wgpu::BufferUsages::VERTEX)
@@ -55,8 +60,14 @@ impl RenderSet{
             .with_usage(wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST)
             .build(&device, Some("Camera Buffer"));
         
-        let camera_controller = CameraController::new(0.03, 0.03);
-        let camera = Camera::new(1.0 / BOX_SIZE);
+        let camera_controller = CameraController::new(20.0, 0.05);
+        // let camera = Camera::new(1.0 / BOX_SIZE);
+        let camera = Camera::new((0.0, 0.0, 0.0), cgmath::Deg(-45.0), cgmath::Deg(-20.0));
+        let camera_projection = Projection::new(config.width, config.height, cgmath::Deg(45.0), 0.1, 1000.0);
+
+        // // view from the top
+        // let camera = Camera::new((0.0, 0.0, 0.0), cgmath::Deg(0.0), cgmath::Deg(90.0));
+        // let camera_projection = Projection::new(config.width, config.height, cgmath::Deg(45.0), 0.01, 100.0);
 
         let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
@@ -142,6 +153,7 @@ impl RenderSet{
             size,
             camera,
             camera_controller,
+            camera_projection,
             camera_uniform,
             camera_bind_group,
             camera_buffer,
@@ -154,16 +166,19 @@ impl RenderSet{
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         self.size = new_size;
-        self.camera.set_aspect_ratio(self.size.width as f32 / self.size.height as f32);
+        // self.camera.set_aspect_ratio(self.size.width as f32 / self.size.height as f32);
+        self.camera_projection.resize(new_size.width, new_size.height);
     }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         self.camera_controller.process_events(event)
     }
 
-    pub fn update_camera(&mut self, queue: &wgpu::Queue) {
-        self.camera_controller.update_camera(&mut self.camera, &self.size);
-        self.camera_uniform.update_view_proj(&mut self.camera);
+    pub fn update_camera(&mut self, queue: &wgpu::Queue, dt: Duration) {
+        // self.camera_controller.update_camera(&mut self.camera, &self.size);
+        self.camera_controller.update_camera(&mut self.camera, dt);
+        self.camera_uniform.update_view_proj(&self.camera, &self.camera_projection);
+
         queue.write_buffer(&self.camera_buffer.get_buffer(), 0, bytemuck::cast_slice(&[self.camera_uniform]));
     }
 

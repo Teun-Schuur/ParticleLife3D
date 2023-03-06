@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::{time};
 
 use wgpu::{BufferAsyncError, Device};
@@ -40,6 +41,7 @@ pub struct State {
     pub time: time::Instant,
     pub frame_count: u32,
     pub paused: bool,
+    pub dt: Duration,
 }
 
 impl State {
@@ -132,6 +134,7 @@ impl State {
             time,
             frame_count: 0,
             paused: false,
+            dt: Duration::from_millis(16),
         }
     }
 
@@ -200,7 +203,7 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        self.render.update_camera(&self.queue);
+        self.render.update_camera(&self.queue, self.dt);
 
         self.encoder = Some(self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
@@ -230,6 +233,7 @@ impl State {
             println!("FPS: {}", 1.0 / self.time.elapsed().as_secs_f32());
             self.compute.debug(&self.device, &self.queue);
         }
+        self.dt = self.time.elapsed();
         self.time = time::Instant::now();
     }
 
