@@ -2,12 +2,6 @@
 
 // a compute shader in wgsl that simulates gravity for all particles
 
-const BIN_SIZE = 1f;
-const BIN_DEPTH = 3u;
-const BIN_COUNT = 3000u;
-// const BOX_SIZE = BIN_SIZE * BIN_COUNT;
-const BOX_SIZE = 3000f;
-
 struct Atom{
     size: f32, // in nm
     mass: f32, // in Dalton (1.66053906660e-27 kg)
@@ -17,18 +11,21 @@ struct Atom{
 }
 
 struct Params {
+    N: u32, // number of particles
     dt: f32,  // in ps
     neghborhood_size: f32, // in nm
     max_force: f32, // in nm * amu / ps^2
     friction: f32,  // in amu / ps
-    global_repulsion_distance: f32, // in nm
     box_size: f32, // in nm
     bin_size: f32, // in nm
     bin_count: u32,
     bin_capacity: u32,
-    attraction: mat4x4,
+    align1: u32,
+    align2: u32,
+    align3: u32,
     helium: Atom,
 }
+
 
 struct Particle {
     x: f32,
@@ -58,17 +55,10 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     var vPos = vec2<f32>(particles[index].x, particles[index].y);
     var vVel = vec2<f32>(particles[index].vel_x, particles[index].vel_y);
     var vAcc = vec2<f32>(particles[index].acc_x, particles[index].acc_y);
-    // var vAcc = vec2<f32>(0.0, 0.0);
 
-
-    // let dt: f32 = params.dt;
-    // vPos = vPos + vVel * dt + vAcc * dt * dt * 0.5;
-    // vVel = vVel + vAcc * dt;
-    // vVel = vVel * (1.0 - params.friction); 
-
+    let dt: f32 = params.dt;
+    vPos = vPos + vVel * dt + vAcc * dt * dt * 0.5;
 
     particles[index].x = vPos.x;
     particles[index].y = vPos.y;
-    particles[index].vel_x = vVel.x;
-    particles[index].vel_y = vVel.y;
 }

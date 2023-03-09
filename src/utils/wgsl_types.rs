@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 
-
-
 #[repr(C, align(16))]
 #[derive(Copy, Clone)]
 pub struct mat4x4 {
@@ -12,9 +10,7 @@ unsafe impl bytemuck::Zeroable for mat4x4 {}
 
 impl mat4x4 {
     pub fn new() -> Self {
-        Self {
-            m: [[0.0; 4]; 4],
-        }
+        Self { m: [[0.0; 4]; 4] }
     }
 }
 

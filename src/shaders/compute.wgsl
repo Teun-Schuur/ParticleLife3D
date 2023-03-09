@@ -11,6 +11,7 @@ struct Atom{
 }
 
 struct Params {
+    N: u32, // number of particles
     dt: f32,  // in ps
     neghborhood_size: f32, // in nm
     max_force: f32, // in nm * amu / ps^2
@@ -19,6 +20,9 @@ struct Params {
     bin_size: f32, // in nm
     bin_count: u32,
     bin_capacity: u32,
+    align1: u32,
+    align2: u32,
+    align3: u32,
     helium: Atom,
 }
 
@@ -35,12 +39,17 @@ struct Particle {
     type_: f32,
 }
 
+struct Stats {
+    KE: f32,
+    PE: f32,
+}
+
 @binding(0) @group(0) var<uniform> params : Params;
 @binding(1) @group(0) var<storage, read> particlesA : array<Particle>;
 @binding(2) @group(0) var<storage, read_write> particlesB : array<Particle>;
 @binding(3) @group(0) var<storage, read> bin_load : array<u32>;
 @binding(4) @group(0) var<storage, read> depth : array<i32>;
-@binding(5) @group(0) var<storage, read_write> energies : array<f32>;
+@binding(5) @group(0) var<storage, read_write> stats : array<Stats>;
 
 // let PARTICLES_TO_CHECK_SIZE: u32 = params.bin_capacity * 9u;
 
@@ -88,11 +97,6 @@ fn lennard_jones(dist: f32, sigma: f32, epsilon: f32) -> f32 {
 }
 
 fn lennard_jones_force(dist: f32, sigma: f32, epsilon: f32) -> f32 {
-    // lennard jones potential derivative (in nm * u * ps^-2)
-    // let r6 = pow(sigma / dist, 6.0);
-    // let r12 = r6 * r6;
-    // return -24.0 * epsilon * (r6 - 2.0 * r12) / dist;
-
     let r6 = pow(sigma / dist, 6.0);
     let r12 = r6 * r6;
     // let force = -24.0 * epsilon / sigma * r6inv * (2.0 * r6inv - 1.0);
@@ -101,11 +105,10 @@ fn lennard_jones_force(dist: f32, sigma: f32, epsilon: f32) -> f32 {
 }
 
 fn calc_forces(dist: f32, normal: vec2<f32>) -> vec2<f32> {
-    // calculate the forces on the particle
     let force = lennard_jones_force(dist, params.helium.sigma, params.helium.epsilon);
-    // force = clamp(force, -params.max_force, params.max_force);
     return force * normal;
 }
+
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
@@ -119,7 +122,7 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     var vVel = vec2<f32>(particlesA[index].vel_x, particlesA[index].vel_y);
     var vAcc = vec2<f32>(particlesA[index].acc_x, particlesA[index].acc_y);
 
-    var energy = 0.0;
+    var pe = 0.0;
     var pos: vec2<f32>;
     var vel: vec2<f32>;
     var d: vec2<f32>;
@@ -132,19 +135,6 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     let y_temp = (vPos.y + params.box_size) / 2f;
     let bin_x = i32(floor(x_temp / params.bin_size));
     let bin_y = i32(floor(y_temp / params.bin_size));
-
-    // for (var i = 0u; i < array_length; i++) {
-    //     if i == index {
-    //         continue;
-    //     }
-    //     pos = vec2<f32>(particlesA[i].x, particlesA[i].y);
-    //     vel = vec2<f32>(particlesA[i].vel_x, particlesA[i].vel_y);
-    //     d = pos - vPos;
-    //     dist = length(d);
-    //     normal = d / dist;
-    //     energy = energy + lennard_jones(dist, params.helium.sigma, params.helium.epsilon);
-    //     acc = acc + calc_forces(dist, normal) / params.helium.mass;
-    // }
 
     for (var x = -1; x <= 1; x += 1) {
         for (var y = -1; y <= 1; y += 1) {
@@ -181,22 +171,56 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
                 }
 
                 dist = length(d);
-                if dist > params.neghborhood_size {
-                    continue;
+                // if dist > params.neghborhood_size {
+                //     continue;
+                // }
+                if dist < params.helium.sigma * 0.35 {
+                    dist = params.helium.sigma * 0.35;
                 }
                 normal = d / dist;
-                energy = energy + lennard_jones(dist, params.helium.sigma, params.helium.epsilon) * 0.5;
+                pe = pe + lennard_jones(dist, params.helium.sigma, params.helium.epsilon) * 0.5;
                 acc = acc + calc_forces(dist, normal) / params.helium.mass;
-
             }
         }
     }
 
 
-    // acc = acc + vec2<f32>(0.0, -0.02);
-    vPos = vPos + vVel * params.dt + vAcc * params.dt * params.dt * 0.5;
+    // leap frog integration
+    // vPos = vPos + vVel * params.dt + vAcc * params.dt * params.dt * 0.5;
+    // vVel = vVel + acc * params.dt;
+    
+
     vVel = vVel + (acc + vAcc) * params.dt * 0.5;
-    energy = energy + 0.5 * dot(vVel, vVel) * params.helium.mass;
+    // vPos = vPos + vVel * params.dt + vAcc * params.dt * params.dt * 0.5;
+
+    // vPos = vPos + vVel * params.dt + vAcc * params.dt * params.dt * 0.5;
+    // vVel = vVel + acc * params.dt;
+
+    // let vVelHalf = vVel + acc * params.dt * 0.5 + acc * params.dt * params.dt * 0.25 + vAcc * params.dt * params.dt * 0.125;
+    // vPos = vPos + vVelHalf * params.dt + vAcc * params.dt * params.dt * 0.5;
+    // vVel = vVelHalf + acc * params.dt * 0.5 + acc * params.dt * params.dt * 0.25 + vAcc * params.dt * params.dt * 0.125;
+
+    // // Runge-Kutta
+    // let dxdt = vVel + acc * params.dt * 0.5;
+    // let dvdt = acc;
+    // let dt = params.dt;
+
+    // // Compute intermediate values
+    // let k1x = dxdt*dt;
+    // let k1v = dvdt*dt;
+    // let k2x = (dxdt + 0.5*k1v)*dt;
+    // let k2v = (dvdt + 0.5*k1x)*dt;
+    // let k3x = (dxdt + 0.5*k2v)*dt;
+    // let k3v = (dvdt + 0.5*k2x)*dt;
+    // let k4x = (dxdt + k3v)*dt;
+    // let k4v = (dvdt + k3x)*dt;
+    
+    // // Compute final values
+    // vPos = vPos + (k1x + 2.0*k2x + 2.0*k3x + k4x)/6.0;
+    // vVel = vVel + (k1v + 2.0*k2v + 2.0*k3v + k4v)/6.0;
+    
+
+    let ke = 0.5 * dot(vVel, vVel) * params.helium.mass;
     
     if vPos.x < 0.0 {
         vPos.x += params.box_size*2.0;
@@ -230,7 +254,8 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     // }
 
     
-    energies[index] = energy;
+    stats[index].KE = ke;
+    stats[index].PE = pe;
     particlesB[index].x = vPos.x;
     particlesB[index].y = vPos.y;
     particlesB[index].vel_x = vVel.x;

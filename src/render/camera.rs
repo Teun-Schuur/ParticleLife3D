@@ -1,10 +1,10 @@
-use cgmath::{SquareMatrix, InnerSpace};
-use winit::event::{WindowEvent, KeyboardInput, ElementState, VirtualKeyCode};
 use cgmath::*;
-use winit::event::*;
-use winit::dpi::PhysicalPosition;
+use cgmath::{InnerSpace, SquareMatrix};
 use std::f32::consts::FRAC_PI_2;
 use std::time::Duration;
+use winit::dpi::PhysicalPosition;
+use winit::event::*;
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
@@ -16,7 +16,6 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 
 const SAFE_FRAC_PI_2: f32 = FRAC_PI_2 - 0.0001;
 
-
 #[derive(Debug)]
 pub struct Camera {
     pub position: Point3<f32>,
@@ -25,11 +24,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new<
-        V: Into<Point3<f32>>,
-        Y: Into<Rad<f32>>,
-        P: Into<Rad<f32>>,
-    >(
+    pub fn new<V: Into<Point3<f32>>, Y: Into<Rad<f32>>, P: Into<Rad<f32>>>(
         position: V,
         yaw: Y,
         pitch: P,
@@ -47,16 +42,11 @@ impl Camera {
 
         Matrix4::look_to_rh(
             self.position,
-            Vector3::new(
-                cos_pitch * cos_yaw,
-                sin_pitch,
-                cos_pitch * sin_yaw
-            ).normalize(),
+            Vector3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw).normalize(),
             Vector3::unit_y(),
         )
     }
 }
-
 
 pub struct Projection {
     aspect: f32,
@@ -66,13 +56,7 @@ pub struct Projection {
 }
 
 impl Projection {
-    pub fn new<F: Into<Rad<f32>>>(
-        width: u32,
-        height: u32,
-        fovy: F,
-        znear: f32,
-        zfar: f32,
-    ) -> Self {
+    pub fn new<F: Into<Rad<f32>>>(width: u32, height: u32, fovy: F, znear: f32, zfar: f32) -> Self {
         Self {
             aspect: width as f32 / height as f32,
             fovy: fovy.into(),
@@ -89,9 +73,6 @@ impl Projection {
         OPENGL_TO_WGPU_MATRIX * perspective(self.fovy, self.aspect, self.znear, self.zfar)
     }
 }
- 
-
-
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -116,8 +97,6 @@ impl CameraUniform {
         self.view_proj = (projection.calc_matrix() * camera.calc_matrix()).into();
     }
 }
-
-
 
 #[derive(Debug)]
 pub struct CameraController {
@@ -158,7 +137,6 @@ impl CameraController {
     }
 
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
-        
         match event {
             WindowEvent::KeyboardInput {
                 input:
@@ -179,7 +157,7 @@ impl CameraController {
                     self.just_mouse_pressed = true;
                 }
                 true
-            },
+            }
             WindowEvent::MouseWheel { delta, .. } => {
                 self.process_scroll(delta);
                 true
@@ -188,13 +166,17 @@ impl CameraController {
                 self.process_mouse(position.x, position.y);
                 true
             }
-            
+
             _ => false,
         }
     }
 
-    pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool{
-        let amount = if state == ElementState::Pressed { 1.0 } else { 0.0 };
+    pub fn process_keyboard(&mut self, key: VirtualKeyCode, state: ElementState) -> bool {
+        let amount = if state == ElementState::Pressed {
+            1.0
+        } else {
+            0.0
+        };
         match key {
             VirtualKeyCode::W | VirtualKeyCode::Up => {
                 self.amount_forward = amount;
@@ -245,10 +227,7 @@ impl CameraController {
         self.scroll = match delta {
             // I'm assuming a line is about 100 pixels
             MouseScrollDelta::LineDelta(_, scroll) => scroll * 300.0,
-            MouseScrollDelta::PixelDelta(PhysicalPosition {
-                y: scroll,
-                ..
-            }) => *scroll as f32,
+            MouseScrollDelta::PixelDelta(PhysicalPosition { y: scroll, .. }) => *scroll as f32,
         };
     }
 
@@ -267,7 +246,8 @@ impl CameraController {
         // changes when zooming. I've added this to make it easier
         // to get closer to an object you want to focus on.
         let (pitch_sin, pitch_cos) = camera.pitch.0.sin_cos();
-        let scrollward = Vector3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
+        let scrollward =
+            Vector3::new(pitch_cos * yaw_cos, pitch_sin, pitch_cos * yaw_sin).normalize();
         camera.position += scrollward * self.scroll * self.speed * self.sensitivity * dt;
         self.scroll = 0.0;
 
@@ -294,10 +274,6 @@ impl CameraController {
     }
 }
 
-
-
-
-
 // pub struct CameraController {
 //     move_speed: f32,
 //     zoom_speed: f32,
@@ -312,7 +288,6 @@ impl CameraController {
 //     mouse_wheel_delta: f32,
 //     mouse_left_pressed: bool,
 // }
-
 
 // impl CameraController {
 //     pub fn new(move_speed: f32, zoom_speed: f32) -> Self {
@@ -397,13 +372,13 @@ impl CameraController {
 //                 self.mouse_position = [position.x as f32, position.y as f32];
 //                 true
 //             }
-            
+
 //             _ => false,
 //         }
 //     }
 
 //     pub fn update_camera(&mut self, camera: &mut Camera, win_size: &winit::dpi::PhysicalSize<u32>) {
-        
+
 //         let mut direction = [0.0, 0.0];
 //         if self.is_forward_pressed {
 //             direction[1] += 1.0;
@@ -444,4 +419,3 @@ impl CameraController {
 //         self.mouse_wheel_delta = 0.0;
 //     }
 // }
- 

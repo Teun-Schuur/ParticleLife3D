@@ -1,5 +1,3 @@
-
-
 // macros
 
 mod macros {
@@ -10,7 +8,9 @@ mod macros {
                 binding: $binding,
                 visibility: wgpu::ShaderStage::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: $read_only },
+                    ty: wgpu::BufferBindingType::Storage {
+                        read_only: $read_only,
+                    },
                     has_dynamic_offset: false,
                     min_binding_size: wgpu::BufferSize::new($min_binding_size),
                 },

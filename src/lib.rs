@@ -1,8 +1,11 @@
 // #![allow(unused_imports, dead_code)]
 
-use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{Event, WindowEvent, KeyboardInput, ElementState, VirtualKeyCode}};
 use env_logger;
-
+use winit::{
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
 
 // mod wgsl_types;
 // mod render_set;
@@ -15,12 +18,11 @@ use env_logger;
 
 #[macro_use]
 pub mod render;
-pub mod system;
 pub mod state;
+pub mod system;
 pub mod utils;
 
 use crate::state::State;
-
 
 pub async fn run(width: i32, height: i32) {
     env_logger::init();
@@ -33,8 +35,9 @@ pub async fn run(width: i32, height: i32) {
         .unwrap();
 
     let mut state: State = State::new(window).await;
-    
+
     event_loop.run(move |event, _, control_flow| {
+        state.handle_event(&event);
         match event {
             Event::WindowEvent {
                 ref event,
@@ -51,7 +54,10 @@ pub async fn run(width: i32, height: i32) {
                                     ..
                                 },
                             ..
-                        } => *control_flow = ControlFlow::Exit,
+                        } => {
+                            state.exit();
+                            *control_flow = ControlFlow::Exit
+                        },
                         WindowEvent::Resized(physical_size) => {
                             state.resize(*physical_size);
                         }
@@ -68,10 +74,12 @@ pub async fn run(width: i32, height: i32) {
                 match state.render() {
                     Ok(_) => {}
                     // Reconfigure the surface if it's lost or outdated
-                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => state.resize(state.size),
+                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                        state.resize(state.size)
+                    }
                     // The system is out of memory, we should probably quit
                     Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    
+
                     Err(wgpu::SurfaceError::Timeout) => log::warn!("Surface timeout"),
                 }
             }

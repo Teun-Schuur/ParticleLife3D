@@ -1,6 +1,6 @@
 
 // Vertex shader
-const SIZE: f32 = 1.1403000; // in nm
+const SIZE: f32 = 0.12751; // in nm
 
 struct CameraUniform {
     view_proj: mat4x4<f32>,

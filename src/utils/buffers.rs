@@ -1,4 +1,3 @@
-
 // wgpu buffers
 
 use wgpu::util::DeviceExt;
@@ -19,7 +18,7 @@ impl Buffer {
             usage_: None,
         }
     }
-    
+
     pub fn with_data(self, data: &[u8]) -> Self {
         Self {
             data_: Some(data.to_vec()),
@@ -37,24 +36,30 @@ impl Buffer {
     pub fn build(mut self, device: &wgpu::Device, label: Option<&str>) -> Self {
         let data = self.data_.as_ref().unwrap();
         let usage = self.usage_.unwrap();
-        self.buffer = Some(device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
+        self.buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label,
                 contents: bytemuck::cast_slice(&data),
                 usage,
-            }
-        ));
+            }),
+        );
         self
     }
 
-    pub fn create_buffer(&mut self, device: &wgpu::Device, size: wgpu::BufferAddress, usage: wgpu::BufferUsages, label: Option<&str>) {
-        self.buffer = Some(device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
+    pub fn create_buffer(
+        &mut self,
+        device: &wgpu::Device,
+        size: wgpu::BufferAddress,
+        usage: wgpu::BufferUsages,
+        label: Option<&str>,
+    ) {
+        self.buffer = Some(
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label,
                 contents: bytemuck::cast_slice(&[0u8; 0]),
                 usage,
-            }
-        ));
+            }),
+        );
         self.size = Some(size);
     }
 

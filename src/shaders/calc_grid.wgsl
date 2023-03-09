@@ -9,6 +9,7 @@ struct Atom{
 }
 
 struct Params {
+    N: u32, // number of particles
     dt: f32,  // in ps
     neghborhood_size: f32, // in nm
     max_force: f32, // in nm * amu / ps^2
@@ -17,8 +18,12 @@ struct Params {
     bin_size: f32, // in nm
     bin_count: u32,
     bin_capacity: u32,
+    align1: u32,
+    align2: u32,
+    align3: u32,
     helium: Atom,
 }
+
 
 struct Particle {
     x: f32,
