@@ -6,9 +6,9 @@ use super::params::Params;
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Particle {
-    pub position: [f32; 2],
-    pub velocity: [f32; 2],
-    pub last_acceleration: [f32; 2],
+    pub position: [f32; 3],
+    pub velocity: [f32; 3],
+    pub last_acceleration: [f32; 3],
     pub color: [f32; 3],
     pub type_: f32,
 }
@@ -17,9 +17,9 @@ unsafe impl bytemuck::Zeroable for Particle {}
 
 impl Particle {
     const MAX_TYPES: u32 = 4;
-    const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x2, 4 => Float32x2, 5 => Float32x2, 6 => Float32x3, 7 => Float32];
+    const ATTRIBS: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![3 => Float32x3, 4 => Float32x3, 5 => Float32x3, 6 => Float32x3, 7 => Float32];
 
-    pub fn new(type_: f32, position: [f32; 2], velocity: [f32; 2]) -> Self {
+    pub fn new(type_: f32, position: [f32; 3], velocity: [f32; 3]) -> Self {
         // let mut rng = rand::thread_rng();
         // let position = [container * (rand::random::<f32>()-0.5) * 2.0, container * (rand::random::<f32>()-0.5) * 2.0];
         let hue = map(type_, 0.0, Self::MAX_TYPES as f32, 0.0, 360.0);
@@ -27,15 +27,11 @@ impl Particle {
         Self {
             position,
             velocity,
-            last_acceleration: [0.0, 0.0],
+            last_acceleration: [0.0, 0.0, 0.0],
             color,
             type_: type_,
         }
     }
-
-    // pub fn raw(&self) -> [f32; std::mem::size_of::<Particle>()/4] {
-    //     bytemuck::cast(*self)
-    // }
 
     pub fn serialize(&self) -> &[u8] {
         bytemuck::bytes_of(self)
@@ -74,23 +70,27 @@ impl Particle {
         // space particles evenly in a grid
         let mut particles = Vec::with_capacity(num_particles as usize);
 
-        let side = (num_particles as f32).sqrt().ceil() as u32;
+        let side = (num_particles as f32).cbrt().ceil() as u32;
         // let spacing = params.box_size / side as f32;
-        let spacing = BOX_SIZE / side as f32;
-        let ofset = BOX_SIZE / 2.0 - spacing * side as f32 / 2.0;
+        let spacing = INIT_SPACING;
+        // let ofset = BOX_SIZE / 2.0 - spacing * side as f32 / 2.0;
+        let ofset = EXES_SPACING;
         for i in 0..side {
             for j in 0..side {
-                if i * side + j >= num_particles as u32 {
-                    break;
+                for k in 0..side {
+                    if i * side * side + j * side + k >= num_particles as u32 {
+                        break;
+                    }
+                    let x = (i as f32) * spacing * 2.0 - params.box_size + ofset;
+                    let y = (j as f32) * spacing * 2.0 - params.box_size + ofset;
+                    let z = (k as f32) * spacing * 2.0 - params.box_size + ofset;
+                    let _type = (i + j * side + k * side * side) as u32 % Self::MAX_TYPES;
+                    particles.push(Particle::new(
+                        _type as f32,
+                        [x, y, z],
+                        maxwell_boltzmann_sampler(INIT_TEMPERATURE, params.helium.mass),
+                    ));
                 }
-                let x = (i as f32) * spacing * 2.0 - params.box_size + ofset;
-                let y = (j as f32) * spacing * 2.0 - params.box_size + ofset;
-                let _type = (i + j * side) as u32 % Self::MAX_TYPES;
-                particles.push(Particle::new(
-                    _type as f32,
-                    [x, y],
-                    maxwell_boltzmann_sampler(INIT_TEMPERATURE, params.helium.mass),
-                ));
             }
         }
         particles
@@ -100,9 +100,9 @@ impl Particle {
 impl Default for Particle {
     fn default() -> Self {
         Self {
-            position: [0.0, 0.0],
-            velocity: [0.0, 0.0],
-            last_acceleration: [0.0, 0.0],
+            position: [0.0, 0.0, 0.0],
+            velocity: [0.0, 0.0, 0.0],
+            last_acceleration: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0],
             type_: 0.0,
         }

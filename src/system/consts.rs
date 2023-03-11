@@ -9,17 +9,21 @@ force: eV / nm or nm * amu / ps^2 or 1.660539040 pN
  */
 
 
-pub const NUMBER_PARTICLES: u32 = 20000;
-pub const NEIGHBORHOOD_SIZE: f32 = 0.2551 * 3.0; // in nm
-pub const INIT_TEMPERATURE: f32 = 0.02; // in Kelvin
+pub const NUMBER_PARTICLES: u32 = 10000;
+pub const NUMBER_PARTICLES_CUBED: f32 = 21.544346900318832;
+pub const PARTICLE_SIZE: f32 = 0.2551; // in nm
+pub const NEIGHBORHOOD_SIZE: f32 = PARTICLE_SIZE * 2.5; // in nm
+pub const INIT_TEMPERATURE: f32 = 10.0; // in Kelvin
+pub const INIT_SPACING: f32 = PARTICLE_SIZE * 1.0; // in nm
+pub const EXES_SPACING: f32 = PARTICLE_SIZE * 3.0; // in nm
 
 pub const DT: f32 = 1.0e-3; // in picoseconds
-pub const ITERATIONS: u32 = 151; 
-pub const BIN_DEPTH: u32 = 35;
+pub const ITERATIONS: u32 = 31; 
+pub const BIN_DEPTH: u32 = 100;
 pub const BIN_SIZE: f32 = NEIGHBORHOOD_SIZE;
 
-const TRUE_BOX_SIZE: f32 = 30.0; // this times bin_size in nm is the size of the box
-pub const BOX_SIZE: f32 = BIN_SIZE * TRUE_BOX_SIZE;
+const TRUE_BOX_SIZE: u32 = ((NUMBER_PARTICLES_CUBED * INIT_SPACING + EXES_SPACING) / PARTICLE_SIZE) as u32;  // which is 
+pub const BOX_SIZE: f32 = BIN_SIZE * (TRUE_BOX_SIZE as f32);
 pub const BIN_COUNT: u32 = TRUE_BOX_SIZE as u32; // for each dimension
 
 pub const CLEAR_COLOR: wgpu::Color = wgpu::Color {

@@ -249,8 +249,8 @@ impl ComputeSet {
             )
         }
 
-        let bin_load_buffer = storage_buffer_empty!(device, "Bin Load Texture", 0u32, BIN_COUNT * BIN_COUNT);
-        let depth_buffer = storage_buffer_empty!(device, "Depth Texture", 0i32, BIN_COUNT * BIN_COUNT * BIN_DEPTH);
+        let bin_load_buffer = storage_buffer_empty!(device, "Bin Load Texture", 0u32, BIN_COUNT * BIN_COUNT * BIN_COUNT);
+        let depth_buffer = storage_buffer_empty!(device, "Depth Texture", 0i32, BIN_COUNT * BIN_COUNT * BIN_COUNT* BIN_DEPTH);
         let stats_final_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Stats Final Buffer"),
             contents: bytemuck::cast_slice(Stat::create_stats(1).as_slice()),
@@ -438,7 +438,7 @@ impl ComputeSet {
                 compute_pass.set_pipeline(&self.empty_bins_pipeline);
                 compute_pass.set_bind_group(0, &self.empty_bins_bind_group, &[]);
                 compute_pass.dispatch_workgroups(
-                    ((BIN_COUNT * BIN_COUNT) as f32 / 256.0).ceil() as u32,
+                    ((BIN_COUNT * BIN_COUNT * BIN_COUNT) as f32 / 256.0).ceil() as u32,
                     1,
                     1,
                 );
@@ -617,10 +617,12 @@ impl ComputeSet {
                 for y in 0..BIN_COUNT {
                     // print!("y({}): ", y);
                     for x in 0..BIN_COUNT {
-                        let i = x + y * BIN_COUNT;
-                        let d = data[i as usize];
-                        if d > maxim {
-                            maxim = d;
+                        for z in 0..BIN_COUNT {
+                            let i = x + y * BIN_COUNT + z * BIN_COUNT * BIN_COUNT;
+                            let d = data[i as usize];
+                            if d > maxim {
+                                maxim = d;
+                            }
                         }
                     }
                 }
@@ -635,31 +637,31 @@ impl ComputeSet {
         }
     }
 
-    fn print_data_depth_buffer(r: Result<DownloadBuffer, BufferAsyncError>) {
-        match r {
-            Ok(buffer) => {
-                let mut tot: u64 = 0;
-                let data = bytemuck::cast_slice::<u8, i32>(&buffer[..]);
-                println!("size: {}", data.len());
-                for y in 0..BIN_COUNT {
-                    for x in 0..BIN_COUNT {
-                        for z in 0..BIN_DEPTH {
-                            let i = z + x * BIN_DEPTH + y * BIN_DEPTH * BIN_COUNT;
-                            let d = data[i as usize];
-                            if d != -1 {
-                                tot += 1;
-                            }
-                            // println!("bin {} {}: {:?}", x, y, data[i as usize]);
-                        }
-                    }
-                }
-                println!("total particles indexes: {}", tot);
-            }
-            Err(e) => {
-                println!("error: {:?}", e);
-            }
-        }
-    }
+    // fn print_data_depth_buffer(r: Result<DownloadBuffer, BufferAsyncError>) {
+    //     match r {
+    //         Ok(buffer) => {
+    //             let mut tot: u64 = 0;
+    //             let data = bytemuck::cast_slice::<u8, i32>(&buffer[..]);
+    //             println!("size: {}", data.len());
+    //             for y in 0..BIN_COUNT {
+    //                 for x in 0..BIN_COUNT {
+    //                     for z in 0..BIN_DEPTH {
+    //                         let i = z + x * BIN_DEPTH + y * BIN_DEPTH * BIN_COUNT;
+    //                         let d = data[i as usize];
+    //                         if d != -1 {
+    //                             tot += 1;
+    //                         }
+    //                         // println!("bin {} {}: {:?}", x, y, data[i as usize]);
+    //                     }
+    //                 }
+    //             }
+    //             println!("total particles indexes: {}", tot);
+    //         }
+    //         Err(e) => {
+    //             println!("error: {:?}", e);
+    //         }
+    //     }
+    // }
 
 }
 

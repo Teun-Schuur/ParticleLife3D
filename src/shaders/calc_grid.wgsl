@@ -28,10 +28,13 @@ struct Params {
 struct Particle {
     x: f32,
     y: f32,
+    z: f32,
     vel_x: f32,
     vel_y: f32,
+    vel_z: f32,
     acc_x: f32,
     acc_y: f32,
+    acc_z: f32,
     color_x: f32,
     color_y: f32,
     color_z: f32,
@@ -55,9 +58,12 @@ fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
     // get bin index
     let x = (particles[index].x + params.box_size) / 2f;
     let y = (particles[index].y + params.box_size) / 2f;
+    let z = (particles[index].z + params.box_size) / 2f;
     let bin_x = u32(floor(x / params.bin_size));
     let bin_y = u32(floor(y / params.bin_size));
-    let bin_index = bin_x + bin_y * params.bin_count;
+    let bin_z = u32(floor(z / params.bin_size));
+
+    let bin_index = bin_x + bin_y * params.bin_count + bin_z * params.bin_count * params.bin_count;
 
     let depth_index = atomicAdd(&bin_load[bin_index], 1u);
 

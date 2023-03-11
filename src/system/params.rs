@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display};
 use crate::system::consts::*;
 
 // https://openkim.org/files/MO_959249795837_003/LennardJones612_UniversalShifted.params
+// https://link.springer.com/content/pdf/bbm:978-1-4757-1696-2/1.pdf <- beter
 #[repr(C, align(16))]
 #[derive(Copy, Clone)]
 pub struct Atom {
@@ -47,20 +48,20 @@ impl Params {
             bin_count: BIN_COUNT as u32,
             bin_capacity: BIN_DEPTH as u32,
             align: [0; 3],
-            helium: Atom {
+            // helium: Atom {
+            //     size: 0.2551,
+            //     mass: 4.0,
+            //     charge: 0,
+            //     sigma: 0.2551,
+            //     epsilon: 10.22 * BOLTZMANN_CONSTANT,
+            // },
+            helium: Atom {  // fake
                 size: 0.2551,
                 mass: 4.0,
                 charge: 0,
                 sigma: 0.2551,
-                epsilon: 10.22 * BOLTZMANN_CONSTANT,
+                epsilon: 10.22 * BOLTZMANN_CONSTANT * 500.0,
             },
-            // helium: Atom {
-            //     size: 2.2807000,
-            //     mass: 6.0,
-            //     charge: 0,
-            //     sigma: 2.2807000,
-            //     epsilon: 1.0496900 * mU_over_eV * 400.0,
-            // },
         }
     }
 

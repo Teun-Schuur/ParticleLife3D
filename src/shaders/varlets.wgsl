@@ -30,10 +30,13 @@ struct Params {
 struct Particle {
     x: f32,
     y: f32,
+    z: f32,
     vel_x: f32,
     vel_y: f32,
+    vel_z: f32,
     acc_x: f32,
     acc_y: f32,
+    acc_z: f32,
     color_x: f32,
     color_y: f32,
     color_z: f32,
@@ -45,20 +48,20 @@ struct Particle {
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) GlobalInvocationID: vec3<u32>) {
-
     let index = GlobalInvocationID.x;
     let array_length = arrayLength(&particles);
     if index >= array_length {
         return;
     }
     
-    var vPos = vec2<f32>(particles[index].x, particles[index].y);
-    var vVel = vec2<f32>(particles[index].vel_x, particles[index].vel_y);
-    var vAcc = vec2<f32>(particles[index].acc_x, particles[index].acc_y);
+    var vPos = vec3<f32>(particles[index].x, particles[index].y, particles[index].z);
+    var vVel = vec3<f32>(particles[index].vel_x, particles[index].vel_y, particles[index].vel_z);
+    var vAcc = vec3<f32>(particles[index].acc_x, particles[index].acc_y, particles[index].acc_z);
 
     let dt: f32 = params.dt;
     vPos = vPos + vVel * dt + vAcc * dt * dt * 0.5;
 
     particles[index].x = vPos.x;
     particles[index].y = vPos.y;
+    particles[index].z = vPos.z;
 }

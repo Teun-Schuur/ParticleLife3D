@@ -10,7 +10,7 @@ struct CameraUniform {
 var<uniform> camera: CameraUniform;
 
 struct Particle {
-    @location(3) pos: vec2<f32>,
+    @location(3) pos: vec3<f32>,
     @location(6) color: vec3<f32>,
 };
 
@@ -28,12 +28,11 @@ struct VertexOutput {
 fn vs_main(model: VertexInput, particle: Particle) -> VertexOutput {
     var out: VertexOutput;
     out.color = particle.color;
-    var model_pos = vec3<f32>(particle.pos, 0.0);
     var model_matrix = mat4x4<f32>(
         vec4<f32>(SIZE, 0.0, 0.0, 0.0),
         vec4<f32>(0.0, SIZE, 0.0, 0.0),
         vec4<f32>(0.0, 0.0, SIZE, 0.0),
-        vec4<f32>(model_pos, 1.0),
+        vec4<f32>(particle.pos, 1.0),
     );
 
     out.clip_position = camera.view_proj * model_matrix * vec4<f32>(model.position, 1.0);

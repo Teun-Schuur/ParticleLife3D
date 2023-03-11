@@ -14,20 +14,15 @@ unsafe fn u8_slice_as_any<T>(p: &[u8]) -> &T {
     &*(p.as_ptr() as *const T)
 }
 
-pub fn maxwell_boltzmann_sampler(temperature: f32, mass: f32) -> [f32; 2] {
+pub fn maxwell_boltzmann_sampler(temperature: f32, mass: f32) -> [f32; 3] {
     let v_rms = ((3.0 * BOLTZMANN_CONSTANT_J * temperature) / (mass * 1.66053906660e-27)).sqrt(); // Root-mean-square velocity
     let normal = Normal::new(0.0, v_rms).unwrap();
     let mut rng = rand::thread_rng();
     let mut v_x: f32 = normal.sample(&mut rng) * 0.5;
     let mut v_y: f32 = normal.sample(&mut rng) * 0.5;
-    let v_z: f32 = normal.sample(&mut rng) * 0.5;
-    let length = (v_x.powi(2) + v_y.powi(2)).sqrt() * f32::sqrt(2.0); // Length of the velocity vector
-
-    // random direction
-    let dir = 2.0 * PI * rng.gen::<f32>();
-    v_x = length * dir.cos();
-    v_y = length * dir.sin();
-
+    let mut v_z: f32 = normal.sample(&mut rng) * 0.5;
+    // let length = (v_x * v_x + v_y * v_y + v_z * v_z).sqrt();
+    
     // println!("v_rms: {v_rms}, v_x: {v_x}, v_y: {v_y}, length: {length}");
-    return [v_x / 1000.0, v_y / 1000.0];
+    return [v_x / 1000.0, v_y / 1000.0, v_z / 1000.0];
 }
